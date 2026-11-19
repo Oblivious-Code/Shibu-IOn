@@ -4,8 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Duck.ai</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
+      --font: "Duck Sans", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       --bg: #ffffff;
       --sidebar: #f6f6f7;
       --text: #1a1a1c;
@@ -16,6 +20,7 @@
       --hover: #ececef;
       --user-bubble: #f0f0f3;
       --danger: #d64541;
+      --overlay: rgba(0,0,0,0.35);
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -29,18 +34,20 @@
         --hover: #2a2a2f;
         --user-bubble: #2a2a2f;
         --danger: #ff6b68;
+        --overlay: rgba(0,0,0,0.6);
       }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
     body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: var(--font);
       background: var(--bg);
       color: var(--text);
       display: flex;
       overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
-    button { font-family: inherit; }
+    button, input, select, textarea { font-family: inherit; }
 
     /* Sidebar */
     .sidebar {
@@ -77,12 +84,7 @@
     .side-label { font-size: 12px; color: var(--muted); padding: 14px 10px 6px; font-weight: 600; }
 
     /* Main */
-    .main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
     .topbar {
       display: flex;
       align-items: center;
@@ -107,12 +109,7 @@
     .wordmark { font-weight: 700; font-size: 17px; }
 
     /* Stage */
-    .stage {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
+    .stage { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
     .start {
       margin: auto;
       width: 100%;
@@ -141,12 +138,7 @@
     .chip:hover { border-color: var(--accent); }
 
     /* Curved chat bar */
-    .composer-wrap {
-      width: 100%;
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
+    .composer-wrap { width: 100%; max-width: 680px; margin: 0 auto; padding: 0 20px; }
     .composer {
       position: relative;
       background: var(--bar);
@@ -181,11 +173,11 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
     }
+    .tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
-    /* Mode picker inside the bar */
-    .mode-wrap { position: relative; }
-    .mode-btn {
+    .pill-btn {
       background: var(--sidebar);
       border: 1px solid var(--border);
       color: var(--text);
@@ -197,8 +189,13 @@
       align-items: center;
       gap: 6px;
     }
-    .mode-btn:hover { border-color: var(--accent); }
-    .mode-btn .caret { font-size: 10px; color: var(--muted); }
+    .pill-btn:hover { border-color: var(--accent); }
+    .pill-btn.active { border-color: var(--accent); color: var(--accent); }
+    .pill-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .pill-btn .caret { font-size: 10px; color: var(--muted); }
+
+    /* Mode picker */
+    .mode-wrap { position: relative; }
     .mode-menu {
       display: none;
       position: absolute;
@@ -227,7 +224,7 @@
       gap: 2px;
     }
     .mode-option:hover { background: var(--hover); }
-    .mode-option strong { font-size: 14px; }
+    .mode-option strong { font-size: 14px; font-weight: 600; }
     .mode-option span { font-size: 12px; color: var(--muted); }
     .mode-option.selected strong::after { content: "  ✓"; color: var(--accent); }
 
@@ -251,6 +248,55 @@
       color: var(--muted);
       padding: 10px 0 16px;
     }
+
+    /* Customise modal */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--overlay);
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 20px;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: var(--bar);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 460px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .modal h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+    .modal .hint { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field label { font-size: 13px; font-weight: 600; }
+    .field select, .field textarea {
+      background: var(--sidebar);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 14px;
+      outline: none;
+    }
+    .field select:focus, .field textarea:focus { border-color: var(--accent); }
+    .field textarea { resize: vertical; min-height: 80px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+    .btn {
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text);
+      padding: 9px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 
     /* Messages */
     .messages {
@@ -321,17 +367,27 @@
           <div class="composer">
             <textarea id="inputStart" rows="1" placeholder="Ask anything"></textarea>
             <div class="composer-bottom">
-              <div class="mode-wrap">
-                <button class="mode-btn" type="button" data-role="mode-toggle">
-                  <span data-role="mode-label">Reasonable</span><span class="caret">▼</span>
+              <div class="tools">
+                <button class="pill-btn" type="button" data-action="customise">
+                  <svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+                  Customise
                 </button>
-                <div class="mode-menu" data-role="mode-menu">
-                  <button class="mode-option" type="button" data-mode="Fast">
-                    <strong>Fast</strong><span>Quick answers for simple questions</span>
+                <button class="pill-btn" type="button" data-action="image">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg>
+                  Create image
+                </button>
+                <div class="mode-wrap">
+                  <button class="pill-btn" type="button" data-role="mode-toggle">
+                    <span data-role="mode-label">Reasonable</span><span class="caret">▼</span>
                   </button>
-                  <button class="mode-option selected" type="button" data-mode="Reasonable">
-                    <strong>Reasonable</strong><span>Balanced depth and speed</span>
-                  </button>
+                  <div class="mode-menu" data-role="mode-menu">
+                    <button class="mode-option" type="button" data-mode="Fast">
+                      <strong>Fast</strong><span>Quick answers for simple questions</span>
+                    </button>
+                    <button class="mode-option selected" type="button" data-mode="Reasonable">
+                      <strong>Reasonable</strong><span>Balanced depth and speed</span>
+                    </button>
+                  </div>
                 </div>
               </div>
               <button class="send-btn" id="sendStart" title="Send">
@@ -358,17 +414,27 @@
         <div class="composer">
           <textarea id="inputChat" rows="1" placeholder="Ask a follow-up"></textarea>
           <div class="composer-bottom">
-            <div class="mode-wrap">
-              <button class="mode-btn" type="button" data-role="mode-toggle">
-                <span data-role="mode-label">Reasonable</span><span class="caret">▼</span>
+            <div class="tools">
+              <button class="pill-btn" type="button" data-action="customise">
+                <svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+                Customise
               </button>
-              <div class="mode-menu" data-role="mode-menu">
-                <button class="mode-option" type="button" data-mode="Fast">
-                  <strong>Fast</strong><span>Quick answers for simple questions</span>
+              <button class="pill-btn" type="button" data-action="image">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg>
+                Create image
+              </button>
+              <div class="mode-wrap">
+                <button class="pill-btn" type="button" data-role="mode-toggle">
+                  <span data-role="mode-label">Reasonable</span><span class="caret">▼</span>
                 </button>
-                <button class="mode-option selected" type="button" data-mode="Reasonable">
-                  <strong>Reasonable</strong><span>Balanced depth and speed</span>
-                </button>
+                <div class="mode-menu" data-role="mode-menu">
+                  <button class="mode-option" type="button" data-mode="Fast">
+                    <strong>Fast</strong><span>Quick answers for simple questions</span>
+                  </button>
+                  <button class="mode-option selected" type="button" data-mode="Reasonable">
+                    <strong>Reasonable</strong><span>Balanced depth and speed</span>
+                  </button>
+                </div>
               </div>
             </div>
             <button class="send-btn" id="sendChat" title="Send">
@@ -381,6 +447,40 @@
     </div>
   </div>
 
+  <!-- Customise responses modal -->
+  <div class="overlay" id="customiseOverlay">
+    <div class="modal" role="dialog" aria-labelledby="customiseTitle">
+      <h2 id="customiseTitle">Customise responses</h2>
+      <p class="hint">These settings apply to every reply in this browser.</p>
+      <div class="field">
+        <label for="tone">Tone</label>
+        <select id="tone">
+          <option value="Balanced">Balanced</option>
+          <option value="Friendly">Friendly</option>
+          <option value="Formal">Formal</option>
+          <option value="Concise">Concise</option>
+          <option value="Playful">Playful</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="length">Length</label>
+        <select id="length">
+          <option value="Short">Short</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="Detailed">Detailed</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="instructions">Custom instructions</label>
+        <textarea id="instructions" placeholder="For example: Use metric units and explain jargon briefly."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" type="button" id="cancelCustomise">Cancel</button>
+        <button class="btn primary" type="button" id="saveCustomise">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const sidebar = document.getElementById('sidebar');
     const start = document.getElementById('start');
@@ -389,6 +489,13 @@
     const stage = document.getElementById('stage');
 
     let currentMode = 'Reasonable';
+    let imageMode = false;
+    let settings = { tone: 'Balanced', length: 'Medium', instructions: '' };
+
+    try {
+      const saved = JSON.parse(localStorage.getItem('duckai-settings') || 'null');
+      if (saved) settings = { ...settings, ...saved };
+    } catch (e) {}
 
     document.getElementById('toggleSidebar').addEventListener('click', () => {
       sidebar.classList.toggle('collapsed');
@@ -426,6 +533,48 @@
       document.querySelectorAll('[data-role="mode-menu"]').forEach(m => m.classList.remove('open'));
     });
 
+    // Create image toggle (both bars share the state)
+    function setImageMode(on) {
+      imageMode = on;
+      document.querySelectorAll('[data-action="image"]').forEach(b => b.classList.toggle('active', on));
+      document.getElementById('inputStart').placeholder = on ? 'Describe the image you want' : 'Ask anything';
+      document.getElementById('inputChat').placeholder = on ? 'Describe the image you want' : 'Ask a follow-up';
+    }
+
+    document.querySelectorAll('[data-action="image"]').forEach(btn => {
+      btn.addEventListener('click', () => setImageMode(!imageMode));
+    });
+
+    // Customise modal
+    const overlay = document.getElementById('customiseOverlay');
+    const toneEl = document.getElementById('tone');
+    const lengthEl = document.getElementById('length');
+    const instructionsEl = document.getElementById('instructions');
+
+    function openCustomise() {
+      toneEl.value = settings.tone;
+      lengthEl.value = settings.length;
+      instructionsEl.value = settings.instructions;
+      overlay.classList.add('open');
+    }
+
+    document.querySelectorAll('[data-action="customise"]').forEach(btn => {
+      btn.addEventListener('click', openCustomise);
+    });
+
+    document.getElementById('cancelCustomise').addEventListener('click', () => overlay.classList.remove('open'));
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+
+    document.getElementById('saveCustomise').addEventListener('click', () => {
+      settings = {
+        tone: toneEl.value,
+        length: lengthEl.value,
+        instructions: instructionsEl.value.trim()
+      };
+      try { localStorage.setItem('duckai-settings', JSON.stringify(settings)); } catch (e) {}
+      overlay.classList.remove('open');
+    });
+
     // Delete (flame) button clears the current chat
     document.getElementById('deleteChat').addEventListener('click', () => {
       if (!messages.classList.contains('active')) return;
@@ -454,9 +603,14 @@
     }
 
     function respond(text, bubble) {
-      // Placeholder. Replace with a call to your AI backend, sending currentMode with the request.
+      // Placeholder. Replace with a call to your AI backend.
+      // Send currentMode, settings (tone, length, instructions) and imageMode with the request.
       setTimeout(() => {
-        bubble.textContent = `[${currentMode} mode] Placeholder reply to: "${text}". Connect a backend to get real answers.`;
+        if (imageMode) {
+          bubble.textContent = `[Image request] Placeholder for an image generated from: "${text}". Connect an image model to show the result.`;
+        } else {
+          bubble.textContent = `[${currentMode} mode | ${settings.tone}, ${settings.length}] Placeholder reply to: "${text}". Connect a backend to get real answers.`;
+        }
         stage.scrollTop = stage.scrollHeight;
       }, 600);
     }
