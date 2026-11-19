@@ -77,13 +77,20 @@
       cursor: pointer;
       text-align: left;
       width: 100%;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      min-width: 0;
     }
     .side-row:hover { background: var(--hover); }
+    .side-row.current { background: var(--hover); }
     .side-row svg { width: 18px; height: 18px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .side-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
     .side-label { font-size: 12px; color: var(--muted); padding: 14px 10px 6px; font-weight: 600; }
+    .empty-note { font-size: 13px; color: var(--muted); padding: 6px 10px; }
+    #recentList { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
 
     /* Main */
     .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -335,16 +342,14 @@
   <aside class="sidebar" id="sidebar">
     <button class="side-row" id="newChat">
       <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-      New chat
+      <span class="side-text">New chat</span>
     </button>
     <button class="side-row">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-      Search chats
+      <span class="side-text">Search chats</span>
     </button>
     <div class="side-label">Recent</div>
-    <button class="side-row">Trip ideas for Portugal</button>
-    <button class="side-row">Python list comprehension help</button>
-    <button class="side-row">Healthy weeknight dinners</button>
+    <div id="recentList"></div>
   </aside>
 
   <!-- Main -->
@@ -358,7 +363,6 @@
       </div>
       <div class="right">
         <button class="icon-btn delete" id="deleteChat" title="Delete this chat">
-          <!-- Original flame icon -->
           <svg viewBox="0 0 24 24"><path d="M12 22c4-2.5 6-5.5 6-9 0-2.2-1-4-2.2-5.4-.3 1.6-1.2 2.7-2.3 3.2C13.6 7.4 12.8 4.6 11 2c.3 2.6-1 4.6-2.6 6.4C7.2 10 6 11.8 6 14.5 6 18.6 8.7 22 12 22z"/><path d="M12 22c-1.5 0-2.5-1.2-2.5-2.7 0-1.6 1.2-2.6 2.5-4 1.3 1.4 2.5 2.4 2.5 4 0 1.5-1 2.7-2.5 2.7z"/></svg>
         </button>
       </div>
@@ -493,6 +497,7 @@
     const messages = document.getElementById('messages');
     const bottomDock = document.getElementById('bottomDock');
     const stage = document.getElementById('stage');
+    const recentList = document.getElementById('recentList');
 
     let currentMode = 'Reasonable';
     let imageMode = false;
@@ -503,11 +508,106 @@
       if (saved) settings = { ...settings, ...saved };
     } catch (e) {}
 
+    // ---------- Chat storage ----------
+    const CHATS_KEY = 'duckai-chats';
+    let chats = [];
+    let currentChatId = null;
+
+    try {
+      chats = JSON.parse(localStorage.getItem(CHATS_KEY) || '[]');
+      if (!Array.isArray(chats)) chats = [];
+    } catch (e) { chats = []; }
+
+    function saveChats() {
+      try { localStorage.setItem(CHATS_KEY, JSON.stringify(chats)); } catch (e) {}
+    }
+
+    function getCurrentChat() {
+      return chats.find(c => c.id === currentChatId) || null;
+    }
+
+    function renderRecent() {
+      recentList.innerHTML = '';
+      const sorted = [...chats].sort((a, b) => b.updatedAt - a.updatedAt);
+      if (sorted.length === 0) {
+        const note = document.createElement('p');
+        note.className = 'empty-note';
+        note.textContent = 'No chats yet';
+        recentList.appendChild(note);
+        return;
+      }
+      sorted.forEach(chat => {
+        const btn = document.createElement('button');
+        btn.className = 'side-row' + (chat.id === currentChatId ? ' current' : '');
+        btn.title = chat.title;
+        const label = document.createElement('span');
+        label.className = 'side-text';
+        label.textContent = chat.title;
+        btn.appendChild(label);
+        btn.addEventListener('click', () => loadChat(chat.id));
+        recentList.appendChild(btn);
+      });
+    }
+
+    // ---------- View helpers ----------
+    function showChatView() {
+      start.classList.add('hidden');
+      messages.classList.add('active');
+      bottomDock.classList.add('active');
+    }
+
+    function showStartView() {
+      messages.innerHTML = '';
+      messages.classList.remove('active');
+      bottomDock.classList.remove('active');
+      start.classList.remove('hidden');
+      document.getElementById('inputStart').value = '';
+      document.getElementById('inputChat').value = '';
+    }
+
+    function renderMessage(text, who) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + who;
+      div.textContent = text;
+      messages.appendChild(div);
+      stage.scrollTop = stage.scrollHeight;
+      return div;
+    }
+
+    function loadChat(id) {
+      const chat = chats.find(c => c.id === id);
+      if (!chat) return;
+      currentChatId = id;
+      messages.innerHTML = '';
+      chat.messages.forEach(m => renderMessage(m.text, m.who));
+      showChatView();
+      renderRecent();
+      stage.scrollTop = stage.scrollHeight;
+    }
+
+    function startNewChat() {
+      currentChatId = null;
+      showStartView();
+      renderRecent();
+    }
+
+    // ---------- Sidebar and toolbar ----------
     document.getElementById('toggleSidebar').addEventListener('click', () => {
       sidebar.classList.toggle('collapsed');
     });
 
-    // Mode pickers (both bars share the same mode)
+    document.getElementById('newChat').addEventListener('click', startNewChat);
+
+    document.getElementById('deleteChat').addEventListener('click', () => {
+      const chat = getCurrentChat();
+      if (!chat) return;
+      if (!confirm('Delete this chat?')) return;
+      chats = chats.filter(c => c.id !== chat.id);
+      saveChats();
+      startNewChat();
+    });
+
+    // ---------- Mode picker (both bars share the same mode) ----------
     function setMode(mode) {
       currentMode = mode;
       document.querySelectorAll('[data-role="mode-label"]').forEach(l => l.textContent = mode);
@@ -539,7 +639,7 @@
       document.querySelectorAll('[data-role="mode-menu"]').forEach(m => m.classList.remove('open'));
     });
 
-    // Create image toggle (both bars share the state)
+    // ---------- Create image toggle ----------
     function setImageMode(on) {
       imageMode = on;
       document.querySelectorAll('[data-action="image"]').forEach(b => b.classList.toggle('active', on));
@@ -551,7 +651,7 @@
       btn.addEventListener('click', () => setImageMode(!imageMode));
     });
 
-    // Customise modal
+    // ---------- Customise modal ----------
     const overlay = document.getElementById('customiseOverlay');
     const toneEl = document.getElementById('tone');
     const lengthEl = document.getElementById('length');
@@ -581,68 +681,75 @@
       overlay.classList.remove('open');
     });
 
-    // Delete (flame) button clears the current chat
-    document.getElementById('deleteChat').addEventListener('click', () => {
-      if (!messages.classList.contains('active')) return;
-      if (!confirm('Delete this chat?')) return;
-      resetChat();
-    });
-
-    function resetChat() {
-      messages.innerHTML = '';
-      messages.classList.remove('active');
-      bottomDock.classList.remove('active');
-      start.classList.remove('hidden');
-      document.getElementById('inputStart').value = '';
-      document.getElementById('inputChat').value = '';
-    }
-
-    document.getElementById('newChat').addEventListener('click', resetChat);
-
-    function addMessage(text, who) {
-      const div = document.createElement('div');
-      div.className = 'msg ' + who;
-      div.textContent = text;
-      messages.appendChild(div);
-      stage.scrollTop = stage.scrollHeight;
-      return div;
-    }
-
-    function respond(text, bubble) {
+    // ---------- Sending messages ----------
+    function respond(text, chatId, index, bubble) {
       // Placeholder. Replace with a call to your AI backend.
       // Send currentMode, settings (tone, length, instructions) and imageMode with the request.
       setTimeout(() => {
+        let reply;
         if (imageMode) {
-          bubble.textContent = `[Image request] Placeholder for an image generated from: "${text}". Connect an image model to show the result.`;
+          reply = `[Image request] Placeholder for an image generated from: "${text}". Connect an image model to show the result.`;
         } else {
-          bubble.textContent = `[${currentMode} mode | ${settings.tone}, ${settings.length}] Placeholder reply to: "${text}". Connect a backend to get real answers.`;
+          reply = `[${currentMode} mode | ${settings.tone}, ${settings.length}] Placeholder reply to: "${text}". Connect a backend to get real answers.`;
+        }
+        bubble.textContent = reply;
+
+        const chat = chats.find(c => c.id === chatId);
+        if (chat && chat.messages[index]) {
+          chat.messages[index].text = reply;
+          saveChats();
         }
         stage.scrollTop = stage.scrollHeight;
       }, 600);
     }
 
+    function sendMessage(text, inputEl) {
+      const chat = getCurrentChat();
+      if (!chat) return;
+
+      chat.messages.push({ who: 'user', text });
+      renderMessage(text, 'user');
+
+      chat.messages.push({ who: 'bot', text: 'Thinking...' });
+      const index = chat.messages.length - 1;
+      const bubble = renderMessage('Thinking...', 'bot');
+
+      chat.updatedAt = Date.now();
+      saveChats();
+      renderRecent();
+
+      inputEl.value = '';
+      respond(text, chat.id, index, bubble);
+    }
+
     function sendFirst(text) {
       text = text.trim();
       if (!text) return;
-      start.classList.add('hidden');
-      messages.classList.add('active');
-      bottomDock.classList.add('active');
-      addMessage(text, 'user');
-      respond(text, addMessage('Thinking...', 'bot'));
+      const chat = {
+        id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        title: text.length > 40 ? text.slice(0, 40) + '…' : text,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        messages: []
+      };
+      chats.push(chat);
+      currentChatId = chat.id;
+      showChatView();
+      sendMessage(text, document.getElementById('inputStart'));
     }
 
     function sendFollow(text) {
       text = text.trim();
       if (!text) return;
-      document.getElementById('inputChat').value = '';
-      addMessage(text, 'user');
-      respond(text, addMessage('Thinking...', 'bot'));
+      if (!getCurrentChat()) {
+        sendFirst(text);
+        return;
+      }
+      sendMessage(text, document.getElementById('inputChat'));
     }
 
     document.getElementById('sendStart').addEventListener('click', () => {
-      const input = document.getElementById('inputStart');
-      sendFirst(input.value);
-      input.value = '';
+      sendFirst(document.getElementById('inputStart').value);
     });
 
     document.getElementById('sendChat').addEventListener('click', () => {
@@ -666,6 +773,9 @@
     document.querySelectorAll('.chip').forEach(chip => {
       chip.addEventListener('click', () => sendFirst(chip.dataset.prompt));
     });
+
+    // ---------- Initial render ----------
+    renderRecent();
   </script>
 </body>
 </html>
