@@ -3,147 +3,201 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DoShibu</title>
+  <title>Duck.ai</title>
   <style>
     :root {
       --bg: #ffffff;
-      --sidebar: #f7f7f8;
-      --text: #1c1c1e;
-      --muted: #6e6e73;
-      --border: #e3e3e6;
+      --sidebar: #f6f6f7;
+      --text: #1a1a1c;
+      --muted: #6b6b72;
+      --border: #e2e2e6;
       --accent: #de5833;
-      --input-bg: #ffffff;
-      --card: #f4f4f6;
+      --bar: #ffffff;
+      --hover: #ececef;
+      --user-bubble: #f0f0f3;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #1e1e20;
-        --sidebar: #161618;
+        --bg: #1c1c1f;
+        --sidebar: #151517;
         --text: #ececf1;
         --muted: #9a9aa3;
-        --border: #34343a;
+        --border: #33333a;
         --accent: #f07a50;
-        --input-bg: #2a2a2e;
-        --card: #2a2a2e;
+        --bar: #2a2a2f;
+        --hover: #2a2a2f;
+        --user-bubble: #2a2a2f;
       }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
     body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
-      height: 100vh;
       display: flex;
       overflow: hidden;
     }
+    button { font-family: inherit; }
 
-    /* Sidebar */
+    /* ---------- Sidebar ---------- */
     .sidebar {
-      width: 260px;
+      width: 264px;
+      flex-shrink: 0;
       background: var(--sidebar);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      padding: 16px;
+      padding: 12px;
+      gap: 4px;
       transition: width 0.2s ease, padding 0.2s ease;
     }
-    .sidebar.collapsed { width: 0; padding: 0; overflow: hidden; }
-    .new-chat {
-      background: var(--card);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 10px 12px;
+    .sidebar.collapsed { width: 0; padding: 0; border: none; overflow: hidden; }
+    .side-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
       border-radius: 10px;
-      cursor: pointer;
       font-size: 14px;
+      color: var(--text);
+      background: none;
+      border: none;
+      cursor: pointer;
       text-align: left;
-      margin-bottom: 16px;
+      width: 100%;
+      white-space: nowrap;
     }
-    .new-chat:hover { border-color: var(--accent); }
-    .sidebar h4 {
+    .side-row:hover { background: var(--hover); }
+    .side-row svg { width: 18px; height: 18px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .side-label {
       font-size: 12px;
       color: var(--muted);
+      padding: 14px 10px 6px;
       font-weight: 600;
-      margin: 8px 0;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
     .history-item {
-      padding: 8px 10px;
-      border-radius: 8px;
-      font-size: 14px;
-      color: var(--text);
-      cursor: pointer;
-      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .history-item:hover { background: var(--card); }
 
-    /* Main */
+    /* ---------- Main area ---------- */
     .main {
       flex: 1;
       display: flex;
       flex-direction: column;
       min-width: 0;
+      position: relative;
     }
-    header {
+    .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
     }
+    .topbar .left, .topbar .right { display: flex; align-items: center; gap: 8px; }
     .icon-btn {
       background: none;
       border: none;
       color: var(--text);
-      font-size: 18px;
       cursor: pointer;
-      padding: 6px 10px;
-      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
     }
-    .icon-btn:hover { background: var(--card); }
-    .model-select {
-      background: var(--card);
+    .icon-btn:hover { background: var(--hover); }
+    .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .wordmark { font-weight: 700; font-size: 17px; }
+    .model-pill {
+      background: var(--bar);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-size: 14px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .model-pill select {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font: inherit;
+      outline: none;
+      cursor: pointer;
     }
 
-    /* Start screen */
-    .content {
+    /* ---------- Start screen ---------- */
+    .stage {
       flex: 1;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      padding: 24px 16px;
     }
     .start {
       margin: auto;
       width: 100%;
-      max-width: 720px;
+      max-width: 680px;
+      padding: 0 20px;
       text-align: center;
+      transition: opacity 0.2s;
     }
-    .logo { font-size: 44px; margin-bottom: 8px; }
-    .start h1 { font-size: 28px; font-weight: 600; margin-bottom: 6px; }
-    .start p.sub { color: var(--muted); font-size: 15px; margin-bottom: 28px; }
-
-    .composer {
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    .start h1 {
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .start .sub {
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 32px;
+    }
+    .suggestions {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 8px;
+      margin-top: 18px;
     }
-    .composer:focus-within { border-color: var(--accent); }
-    .composer textarea {
+    .chip {
+      background: var(--bar);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .chip:hover { border-color: var(--accent); }
+
+    /* ---------- Curved chat bar ---------- */
+    .composer-wrap {
       width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    .composer {
+      background: var(--bar);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 10px 10px 10px 18px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .composer:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 6px 24px rgba(222,88,51,0.15);
+    }
+    .composer textarea {
+      flex: 1;
       border: none;
       outline: none;
       resize: none;
@@ -151,139 +205,144 @@
       color: var(--text);
       font: inherit;
       font-size: 16px;
-      min-height: 48px;
-      max-height: 200px;
+      line-height: 1.4;
+      padding: 9px 0;
+      max-height: 180px;
     }
-    .composer-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    .composer textarea::placeholder { color: var(--muted); }
+    .composer .tools { display: flex; align-items: center; gap: 4px; }
     .send-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: none;
       background: var(--accent);
       color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 8px 14px;
       cursor: pointer;
-      font-weight: 600;
-    }
-    .send-btn:disabled { opacity: 0.4; cursor: default; }
-
-    .cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-      margin-top: 24px;
+      place-items: center;
+      flex-shrink: 0;
     }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
-      text-align: left;
-      cursor: pointer;
-      color: var(--text);
-      font: inherit;
-      font-size: 14px;
-      line-height: 1.4;
-    }
-    .card:hover { border-color: var(--accent); }
-    .card strong { display: block; margin-bottom: 4px; }
-
-    /* Chat messages */
-    .messages {
-      max-width: 720px;
-      width: 100%;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .msg {
-      padding: 12px 16px;
-      border-radius: 14px;
-      line-height: 1.5;
-      font-size: 15px;
-      max-width: 85%;
-      white-space: pre-wrap;
-    }
-    .msg.user { background: var(--card); align-self: flex-end; }
-    .msg.bot { align-self: flex-start; border: 1px solid var(--border); }
-
-    .bottom-bar {
-      max-width: 720px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 12px 16px 20px;
-    }
-    .bottom-bar .composer { width: 100%; }
-    .hidden { display: none !important; }
+    .send-btn:disabled { opacity: 0.35; cursor: default; }
+    .send-btn svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 2.2; }
     .disclaimer {
       text-align: center;
       font-size: 12px;
       color: var(--muted);
-      margin-top: 8px;
+      padding: 10px 0 16px;
     }
+
+    /* ---------- Messages ---------- */
+    .messages {
+      display: none;
+      flex-direction: column;
+      gap: 18px;
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+    .messages.active { display: flex; }
+    .msg {
+      line-height: 1.6;
+      font-size: 15px;
+      white-space: pre-wrap;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--user-bubble);
+      padding: 10px 16px;
+      border-radius: 20px;
+      max-width: 80%;
+    }
+    .msg.bot { align-self: flex-start; max-width: 100%; }
+    .bottom-dock {
+      display: none;
+      flex-direction: column;
+    }
+    .bottom-dock.active { display: flex; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
+  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
-    <button class="new-chat" id="newChat">+ New chat</button>
-    <h4>Recent</h4>
-    <div class="history-item">Trip ideas for Portugal</div>
-    <div class="history-item">Python list comprehension help</div>
-    <div class="history-item">Healthy weeknight dinners</div>
+    <button class="side-row" id="newChat">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      New chat
+    </button>
+    <button class="side-row">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      Search chats
+    </button>
+    <div class="side-label">Recent</div>
+    <button class="side-row history-item">Trip ideas for Portugal</button>
+    <button class="side-row history-item">Python list comprehension help</button>
+    <button class="side-row history-item">Healthy weeknight dinners</button>
   </aside>
 
+  <!-- Main -->
   <div class="main">
-    <header>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <button class="icon-btn" id="toggleSidebar" title="Toggle sidebar">☰</button>
+    <div class="topbar">
+      <div class="left">
+        <button class="icon-btn" id="toggleSidebar" title="Toggle sidebar">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+        </button>
+        <span class="wordmark">Duck.ai</span>
       </div>
-      <select class="model-select" id="model">
-        <option>Claude Haiku 4.5</option>
-        <option>GPT-4o mini</option>
-        <option>Llama 3.3 70B</option>
-        <option>Mistral Small 3</option>
-      </select>
-    </header>
+      <div class="right">
+        <label class="model-pill">
+          <select id="model">
+            <option>Claude Haiku 4.5</option>
+            <option>GPT-4o mini</option>
+            <option>Llama 3.3 70B</option>
+            <option>Mistral Small 3</option>
+          </select>
+        </label>
+      </div>
+    </div>
 
-    <main class="content" id="content">
+    <div class="stage" id="stage">
+      <!-- Start screen -->
       <section class="start" id="start">
-        <div class="logo">Placeholder</div>
-        <h1>Chat privately</h1>
-        <p class="sub">Ask anything. Your chats are anonymous and not used for training.</p>
-
-        <div class="composer">
-          <textarea id="inputStart" rows="2" placeholder="Ask anything..."></textarea>
-          <div class="composer-bottom">
-            <span style="color:var(--muted); font-size:13px;">Shift + Enter for a new line</span>
-            <button class="send-btn" id="sendStart">Send</button>
+        <h1>How can I help you today?</h1>
+        <p class="sub">Chat privately. Your conversations are anonymous.</p>
+        <div class="composer-wrap">
+          <div class="composer">
+            <textarea id="inputStart" rows="1" placeholder="Ask anything"></textarea>
+            <div class="tools">
+              <button class="send-btn" id="sendStart" title="Send">
+                <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              </button>
+            </div>
           </div>
         </div>
-
-        <div class="cards">
-          <button class="card" data-prompt="Explain quantum entanglement simply."><strong>Explain a concept</strong>Quantum entanglement in plain language</button>
-          <button class="card" data-prompt="Give me a 3-day itinerary for Lisbon."><strong>Plan a trip</strong>A 3-day itinerary for Lisbon</button>
-          <button class="card" data-prompt="Write a Python function that removes duplicates from a list while keeping order."><strong>Write code</strong>Remove duplicates while keeping order</button>
-          <button class="card" data-prompt="Suggest five healthy dinners that take under 30 minutes."><strong>Get ideas</strong>Quick healthy dinner recipes</button>
+        <div class="suggestions">
+          <button class="chip" data-prompt="Explain quantum entanglement simply.">Explain a concept</button>
+          <button class="chip" data-prompt="Give me a 3-day itinerary for Lisbon.">Plan a trip</button>
+          <button class="chip" data-prompt="Write a Python function that removes duplicates from a list while keeping order.">Write code</button>
+          <button class="chip" data-prompt="Suggest five healthy dinners that take under 30 minutes.">Get ideas</button>
         </div>
       </section>
 
-      <section class="messages hidden" id="messages"></section>
-    </main>
+      <!-- Conversation -->
+      <section class="messages" id="messages"></section>
+    </div>
 
-    <div class="bottom-bar hidden" id="bottomBar">
-      <div class="composer">
-        <textarea id="inputChat" rows="1" placeholder="Ask a follow-up..."></textarea>
-        <div class="composer-bottom">
-          <span></span>
-          <button class="send-btn" id="sendChat">Send</button>
+    <!-- Bottom docked bar, shown once a chat has started -->
+    <div class="bottom-dock" id="bottomDock">
+      <div class="composer-wrap">
+        <div class="composer">
+          <textarea id="inputChat" rows="1" placeholder="Ask a follow-up"></textarea>
+          <div class="tools">
+            <button class="send-btn" id="sendChat" title="Send">
+              <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            </button>
+          </div>
         </div>
+        <p class="disclaimer">AI can make mistakes. Check important information.</p>
       </div>
-      <p class="disclaimer">AI can make mistakes. Check important information.</p>
     </div>
   </div>
 
@@ -291,7 +350,8 @@
     const sidebar = document.getElementById('sidebar');
     const start = document.getElementById('start');
     const messages = document.getElementById('messages');
-    const bottomBar = document.getElementById('bottomBar');
+    const bottomDock = document.getElementById('bottomDock');
+    const stage = document.getElementById('stage');
     const modelSelect = document.getElementById('model');
 
     document.getElementById('toggleSidebar').addEventListener('click', () => {
@@ -300,10 +360,11 @@
 
     document.getElementById('newChat').addEventListener('click', () => {
       messages.innerHTML = '';
-      messages.classList.add('hidden');
-      bottomBar.classList.add('hidden');
+      messages.classList.remove('active');
+      bottomDock.classList.remove('active');
       start.classList.remove('hidden');
       document.getElementById('inputStart').value = '';
+      document.getElementById('inputChat').value = '';
     });
 
     function addMessage(text, who) {
@@ -311,61 +372,62 @@
       div.className = 'msg ' + who;
       div.textContent = text;
       messages.appendChild(div);
-      document.getElementById('content').scrollTop = 1e9;
+      stage.scrollTop = stage.scrollHeight;
       return div;
     }
 
-    function startChat(text) {
-      text = text.trim();
-      if (!text) return;
-      start.classList.add('hidden');
-      messages.classList.remove('hidden');
-      bottomBar.classList.remove('hidden');
-      addMessage(text, 'user');
-      const reply = addMessage('Thinking...', 'bot');
-      // Placeholder response. Connect this to your AI backend here.
+    function respond(text, bubble) {
+      // Placeholder. Replace this with a call to your AI backend.
       setTimeout(() => {
-        reply.textContent = `[${modelSelect.value}] This is a placeholder reply to: "${text}". Connect a backend to get real answers.`;
+        bubble.textContent = `[${modelSelect.value}] Placeholder reply to: "${text}". Connect a backend to get real answers.`;
+        stage.scrollTop = stage.scrollHeight;
       }, 600);
     }
 
-    function continueChat(text) {
+    function sendFirst(text) {
+      text = text.trim();
+      if (!text) return;
+      start.classList.add('hidden');
+      messages.classList.add('active');
+      bottomDock.classList.add('active');
+      addMessage(text, 'user');
+      respond(text, addMessage('Thinking...', 'bot'));
+    }
+
+    function sendFollow(text) {
       text = text.trim();
       if (!text) return;
       document.getElementById('inputChat').value = '';
       addMessage(text, 'user');
-      const reply = addMessage('Thinking...', 'bot');
-      setTimeout(() => {
-        reply.textContent = `[${modelSelect.value}] Placeholder follow-up reply to: "${text}".`;
-      }, 600);
+      respond(text, addMessage('Thinking...', 'bot'));
     }
 
     document.getElementById('sendStart').addEventListener('click', () => {
       const input = document.getElementById('inputStart');
-      startChat(input.value);
+      sendFirst(input.value);
       input.value = '';
     });
 
     document.getElementById('sendChat').addEventListener('click', () => {
-      continueChat(document.getElementById('inputChat').value);
+      sendFollow(document.getElementById('inputChat').value);
     });
 
-    document.getElementById('inputStart').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        document.getElementById('sendStart').click();
-      }
+    ['inputStart', 'inputChat'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          document.getElementById(id === 'inputStart' ? 'sendStart' : 'sendChat').click();
+        }
+      });
+      el.addEventListener('input', () => {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+      });
     });
 
-    document.getElementById('inputChat').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        document.getElementById('sendChat').click();
-      }
-    });
-
-    document.querySelectorAll('.card').forEach(card => {
-      card.addEventListener('click', () => startChat(card.dataset.prompt));
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => sendFirst(chip.dataset.prompt));
     });
   </script>
 </body>
