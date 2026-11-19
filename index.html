@@ -15,6 +15,7 @@
       --bar: #ffffff;
       --hover: #ececef;
       --user-bubble: #f0f0f3;
+      --danger: #d64541;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -27,6 +28,7 @@
         --bar: #2a2a2f;
         --hover: #2a2a2f;
         --user-bubble: #2a2a2f;
+        --danger: #ff6b68;
       }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,7 +42,7 @@
     }
     button { font-family: inherit; }
 
-    /* ---------- Sidebar ---------- */
+    /* Sidebar */
     .sidebar {
       width: 264px;
       flex-shrink: 0;
@@ -67,27 +69,19 @@
       text-align: left;
       width: 100%;
       white-space: nowrap;
-    }
-    .side-row:hover { background: var(--hover); }
-    .side-row svg { width: 18px; height: 18px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.8; }
-    .side-label {
-      font-size: 12px;
-      color: var(--muted);
-      padding: 14px 10px 6px;
-      font-weight: 600;
-    }
-    .history-item {
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .side-row:hover { background: var(--hover); }
+    .side-row svg { width: 18px; height: 18px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .side-label { font-size: 12px; color: var(--muted); padding: 14px 10px 6px; font-weight: 600; }
 
-    /* ---------- Main area ---------- */
+    /* Main */
     .main {
       flex: 1;
       display: flex;
       flex-direction: column;
       min-width: 0;
-      position: relative;
     }
     .topbar {
       display: flex;
@@ -109,29 +103,10 @@
     }
     .icon-btn:hover { background: var(--hover); }
     .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .icon-btn.delete:hover { color: var(--danger); }
     .wordmark { font-weight: 700; font-size: 17px; }
-    .model-pill {
-      background: var(--bar);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .model-pill select {
-      background: transparent;
-      border: none;
-      color: var(--text);
-      font: inherit;
-      outline: none;
-      cursor: pointer;
-    }
 
-    /* ---------- Start screen ---------- */
+    /* Stage */
     .stage {
       flex: 1;
       overflow-y: auto;
@@ -144,18 +119,9 @@
       max-width: 680px;
       padding: 0 20px;
       text-align: center;
-      transition: opacity 0.2s;
     }
-    .start h1 {
-      font-size: 32px;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-    .start .sub {
-      color: var(--muted);
-      font-size: 15px;
-      margin-bottom: 32px;
-    }
+    .start h1 { font-size: 32px; font-weight: 600; margin-bottom: 10px; }
+    .start .sub { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
     .suggestions {
       display: flex;
       flex-wrap: wrap;
@@ -174,7 +140,7 @@
     }
     .chip:hover { border-color: var(--accent); }
 
-    /* ---------- Curved chat bar ---------- */
+    /* Curved chat bar */
     .composer-wrap {
       width: 100%;
       max-width: 680px;
@@ -182,14 +148,15 @@
       padding: 0 20px;
     }
     .composer {
+      position: relative;
       background: var(--bar);
       border: 1px solid var(--border);
       border-radius: 28px;
-      padding: 10px 10px 10px 18px;
+      padding: 12px 12px 10px 18px;
       box-shadow: 0 6px 24px rgba(0,0,0,0.08);
       display: flex;
-      align-items: flex-end;
-      gap: 8px;
+      flex-direction: column;
+      gap: 4px;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .composer:focus-within {
@@ -197,7 +164,7 @@
       box-shadow: 0 6px 24px rgba(222,88,51,0.15);
     }
     .composer textarea {
-      flex: 1;
+      width: 100%;
       border: none;
       outline: none;
       resize: none;
@@ -206,11 +173,64 @@
       font: inherit;
       font-size: 16px;
       line-height: 1.4;
-      padding: 9px 0;
+      padding: 6px 0;
       max-height: 180px;
     }
     .composer textarea::placeholder { color: var(--muted); }
-    .composer .tools { display: flex; align-items: center; gap: 4px; }
+    .composer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Mode picker inside the bar */
+    .mode-wrap { position: relative; }
+    .mode-btn {
+      background: var(--sidebar);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mode-btn:hover { border-color: var(--accent); }
+    .mode-btn .caret { font-size: 10px; color: var(--muted); }
+    .mode-menu {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      min-width: 240px;
+      background: var(--bar);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      padding: 6px;
+      z-index: 10;
+    }
+    .mode-menu.open { display: block; }
+    .mode-option {
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text);
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .mode-option:hover { background: var(--hover); }
+    .mode-option strong { font-size: 14px; }
+    .mode-option span { font-size: 12px; color: var(--muted); }
+    .mode-option.selected strong::after { content: "  ✓"; color: var(--accent); }
+
     .send-btn {
       width: 38px;
       height: 38px;
@@ -232,7 +252,7 @@
       padding: 10px 0 16px;
     }
 
-    /* ---------- Messages ---------- */
+    /* Messages */
     .messages {
       display: none;
       flex-direction: column;
@@ -243,11 +263,7 @@
       padding: 24px 20px;
     }
     .messages.active { display: flex; }
-    .msg {
-      line-height: 1.6;
-      font-size: 15px;
-      white-space: pre-wrap;
-    }
+    .msg { line-height: 1.6; font-size: 15px; white-space: pre-wrap; }
     .msg.user {
       align-self: flex-end;
       background: var(--user-bubble);
@@ -256,10 +272,7 @@
       max-width: 80%;
     }
     .msg.bot { align-self: flex-start; max-width: 100%; }
-    .bottom-dock {
-      display: none;
-      flex-direction: column;
-    }
+    .bottom-dock { display: none; flex-direction: column; }
     .bottom-dock.active { display: flex; }
     .hidden { display: none !important; }
   </style>
@@ -277,9 +290,9 @@
       Search chats
     </button>
     <div class="side-label">Recent</div>
-    <button class="side-row history-item">Trip ideas for Portugal</button>
-    <button class="side-row history-item">Python list comprehension help</button>
-    <button class="side-row history-item">Healthy weeknight dinners</button>
+    <button class="side-row">Trip ideas for Portugal</button>
+    <button class="side-row">Python list comprehension help</button>
+    <button class="side-row">Healthy weeknight dinners</button>
   </aside>
 
   <!-- Main -->
@@ -292,14 +305,10 @@
         <span class="wordmark">Duck.ai</span>
       </div>
       <div class="right">
-        <label class="model-pill">
-          <select id="model">
-            <option>Claude Haiku 4.5</option>
-            <option>GPT-4o mini</option>
-            <option>Llama 3.3 70B</option>
-            <option>Mistral Small 3</option>
-          </select>
-        </label>
+        <button class="icon-btn delete" id="deleteChat" title="Delete this chat">
+          <!-- Original flame icon -->
+          <svg viewBox="0 0 24 24"><path d="M12 22c4-2.5 6-5.5 6-9 0-2.2-1-4-2.2-5.4-.3 1.6-1.2 2.7-2.3 3.2C13.6 7.4 12.8 4.6 11 2c.3 2.6-1 4.6-2.6 6.4C7.2 10 6 11.8 6 14.5 6 18.6 8.7 22 12 22z"/><path d="M12 22c-1.5 0-2.5-1.2-2.5-2.7 0-1.6 1.2-2.6 2.5-4 1.3 1.4 2.5 2.4 2.5 4 0 1.5-1 2.7-2.5 2.7z"/></svg>
+        </button>
       </div>
     </div>
 
@@ -311,7 +320,20 @@
         <div class="composer-wrap">
           <div class="composer">
             <textarea id="inputStart" rows="1" placeholder="Ask anything"></textarea>
-            <div class="tools">
+            <div class="composer-bottom">
+              <div class="mode-wrap">
+                <button class="mode-btn" type="button" data-role="mode-toggle">
+                  <span data-role="mode-label">Reasonable</span><span class="caret">▼</span>
+                </button>
+                <div class="mode-menu" data-role="mode-menu">
+                  <button class="mode-option" type="button" data-mode="Fast">
+                    <strong>Fast</strong><span>Quick answers for simple questions</span>
+                  </button>
+                  <button class="mode-option selected" type="button" data-mode="Reasonable">
+                    <strong>Reasonable</strong><span>Balanced depth and speed</span>
+                  </button>
+                </div>
+              </div>
               <button class="send-btn" id="sendStart" title="Send">
                 <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
               </button>
@@ -330,12 +352,25 @@
       <section class="messages" id="messages"></section>
     </div>
 
-    <!-- Bottom docked bar, shown once a chat has started -->
+    <!-- Bottom bar, shown once a chat has started -->
     <div class="bottom-dock" id="bottomDock">
       <div class="composer-wrap">
         <div class="composer">
           <textarea id="inputChat" rows="1" placeholder="Ask a follow-up"></textarea>
-          <div class="tools">
+          <div class="composer-bottom">
+            <div class="mode-wrap">
+              <button class="mode-btn" type="button" data-role="mode-toggle">
+                <span data-role="mode-label">Reasonable</span><span class="caret">▼</span>
+              </button>
+              <div class="mode-menu" data-role="mode-menu">
+                <button class="mode-option" type="button" data-mode="Fast">
+                  <strong>Fast</strong><span>Quick answers for simple questions</span>
+                </button>
+                <button class="mode-option selected" type="button" data-mode="Reasonable">
+                  <strong>Reasonable</strong><span>Balanced depth and speed</span>
+                </button>
+              </div>
+            </div>
             <button class="send-btn" id="sendChat" title="Send">
               <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
             </button>
@@ -352,20 +387,62 @@
     const messages = document.getElementById('messages');
     const bottomDock = document.getElementById('bottomDock');
     const stage = document.getElementById('stage');
-    const modelSelect = document.getElementById('model');
+
+    let currentMode = 'Reasonable';
 
     document.getElementById('toggleSidebar').addEventListener('click', () => {
       sidebar.classList.toggle('collapsed');
     });
 
-    document.getElementById('newChat').addEventListener('click', () => {
+    // Mode pickers (both bars share the same mode)
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('[data-role="mode-label"]').forEach(l => l.textContent = mode);
+      document.querySelectorAll('.mode-option').forEach(o => {
+        o.classList.toggle('selected', o.dataset.mode === mode);
+      });
+    }
+
+    document.querySelectorAll('[data-role="mode-toggle"]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const menu = btn.parentElement.querySelector('[data-role="mode-menu"]');
+        document.querySelectorAll('[data-role="mode-menu"]').forEach(m => {
+          if (m !== menu) m.classList.remove('open');
+        });
+        menu.classList.toggle('open');
+      });
+    });
+
+    document.querySelectorAll('.mode-option').forEach(opt => {
+      opt.addEventListener('click', e => {
+        e.stopPropagation();
+        setMode(opt.dataset.mode);
+        document.querySelectorAll('[data-role="mode-menu"]').forEach(m => m.classList.remove('open'));
+      });
+    });
+
+    document.addEventListener('click', () => {
+      document.querySelectorAll('[data-role="mode-menu"]').forEach(m => m.classList.remove('open'));
+    });
+
+    // Delete (flame) button clears the current chat
+    document.getElementById('deleteChat').addEventListener('click', () => {
+      if (!messages.classList.contains('active')) return;
+      if (!confirm('Delete this chat?')) return;
+      resetChat();
+    });
+
+    function resetChat() {
       messages.innerHTML = '';
       messages.classList.remove('active');
       bottomDock.classList.remove('active');
       start.classList.remove('hidden');
       document.getElementById('inputStart').value = '';
       document.getElementById('inputChat').value = '';
-    });
+    }
+
+    document.getElementById('newChat').addEventListener('click', resetChat);
 
     function addMessage(text, who) {
       const div = document.createElement('div');
@@ -377,9 +454,9 @@
     }
 
     function respond(text, bubble) {
-      // Placeholder. Replace this with a call to your AI backend.
+      // Placeholder. Replace with a call to your AI backend, sending currentMode with the request.
       setTimeout(() => {
-        bubble.textContent = `[${modelSelect.value}] Placeholder reply to: "${text}". Connect a backend to get real answers.`;
+        bubble.textContent = `[${currentMode} mode] Placeholder reply to: "${text}". Connect a backend to get real answers.`;
         stage.scrollTop = stage.scrollHeight;
       }, 600);
     }
