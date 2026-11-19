@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Duck.ai</title>
+  <title>DoShibu.ai</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --font: "Duck Sans", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font: "Duck Sans", "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       --bg: #ffffff;
       --sidebar: #f6f6f7;
       --text: #1a1a1c;
@@ -41,6 +41,7 @@
     html, body { height: 100%; }
     body {
       font-family: var(--font);
+      font-weight: 500;
       background: var(--bg);
       color: var(--text);
       display: flex;
@@ -69,6 +70,7 @@
       padding: 9px 10px;
       border-radius: 10px;
       font-size: 14px;
+      font-weight: 500;
       color: var(--text);
       background: none;
       border: none;
@@ -133,6 +135,7 @@
       padding: 8px 14px;
       border-radius: 999px;
       font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
     }
     .chip:hover { border-color: var(--accent); }
@@ -184,6 +187,7 @@
       padding: 6px 12px;
       border-radius: 999px;
       font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -225,7 +229,7 @@
     }
     .mode-option:hover { background: var(--hover); }
     .mode-option strong { font-size: 14px; font-weight: 600; }
-    .mode-option span { font-size: 12px; color: var(--muted); }
+    .mode-option span { font-size: 12px; font-weight: 500; color: var(--muted); }
     .mode-option.selected strong::after { content: "  ✓"; color: var(--accent); }
 
     .send-btn {
@@ -282,6 +286,7 @@
       border-radius: 10px;
       padding: 9px 12px;
       font-size: 14px;
+      font-weight: 500;
       outline: none;
     }
     .field select:focus, .field textarea:focus { border-color: var(--accent); }
@@ -295,6 +300,7 @@
       border-radius: 999px;
       cursor: pointer;
       font-size: 14px;
+      font-weight: 500;
     }
     .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 
@@ -348,7 +354,7 @@
         <button class="icon-btn" id="toggleSidebar" title="Toggle sidebar">
           <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
         </button>
-        <span class="wordmark">Duck.ai</span>
+        <span class="wordmark">Shibu.ai</span>
       </div>
       <div class="right">
         <button class="icon-btn delete" id="deleteChat" title="Delete this chat">
