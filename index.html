@@ -1,1 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DoShibu — Private AI Chat</title>
+  <style>
+    :root {
+      --bg: #111318;
+      --surface: #191c24;
+      --surface-2: #222631;
+      --border: #2c3140;
+      --text: #f3f5f8;
+      --muted: #9aa2b6;
+      --accent: #e06d3b;
+      --accent-hover: #f07b47;
+      --accent-soft: rgba(224, 109, 59, 0.14);
+      --green: #38b778;
+      --radius: 16px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    /* Top Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(17, 19, 24, 0.85);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(224, 109, 59, 0.35);
+      display: grid;
+      place-items: center;
+      font-size: 1.15rem;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .btn-ghost {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 7px 12px;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface-2);
+      border-color: #3d4458;
+    }
+
+    /* Main Workspace */
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 28px 18px 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-top: 24px;
+      margin-bottom: 8px;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.35rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+
+    .hero h1 span {
+      color: var(--accent);
+    }
+
+    .hero p {
+      color: var(--muted);
+      max-width: 540px;
+      margin: 0 auto;
+      font-size: 0.96rem;
+    }
+
+    /* Starter Prompts */
+    .starters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .starter-card {
+      text-align: left;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .starter-card:hover {
+      background: var(--surface-2);
+      border-color: rgba(224, 109, 59, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .starter-card small {
+      display: block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      margin-bottom: 3px;
+    }
+
+    /* Chat Messages */
+    .chat-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .msg {
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      max-width: 90%;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 0.95rem;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: var(--accent);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg.assistant {
+      align-self: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-meta {
+      font-size: 0.74rem;
+      color: var(--muted);
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .msg.user .msg-meta {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Composer Box */
+    .composer-wrap {
+      position: sticky;
+      bottom: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 12px 14px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    textarea {
+      width: 100%;
+      resize: none;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.96rem;
+      min-height: 52px;
+      max-height: 180px;
+    }
+
+    textarea::placeholder {
+      color: var(--muted);
+    }
+
+    .composer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    select {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .send-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 16px;
+      font-weight: 600;
+      font-size: 0.86rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .send-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      padding: 12px 16px 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-badge" aria-hidden="true">🐕</div>
+      <span>DoShibu</span>
+    </div>
+
+    <div class="header-controls">
+      <div class="pill" title="Chats stay in your browser session">
+        <span class="dot"></span>
+        <span>Private Session</span>
+      </div>
+      <button class="btn-ghost" id="clearBtn" type="button">New Chat</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="hero">
+      <h1>Chat privately with <span>DoShibu</span></h1>
+      <p>
+        A clean, distraction-free AI chat interface built for quick answers, brainstorming, and code—without clutter.
+      </p>
+
+      <div class="starters">
+        <button class="starter-card" type="button" data-prompt="Explain how DNS works in plain English with a quick example.">
+          <small>Explain</small>
+          How DNS works in plain English
+        </button>
+        <button class="starter-card" type="button" data-prompt="Give me 5 healthy 15-minute high-protein meal ideas.">
+          <small>Brainstorm</small>
+          5 quick high-protein meal ideas
+        </button>
+        <button class="starter-card" type="button" data-prompt="Write a clean Python function to debounce function calls.">
+          <small>Code</small>
+          Debounce helper in Python
+        </button>
+      </div>
+    </section>
+
+    <section class="chat-feed" id="chatFeed" aria-live="polite"></section>
+
+    <form class="composer-wrap" id="chatForm">
+      <textarea
+        id="promptInput"
+        rows="2"
+        placeholder="Ask DoShibu anything... (Enter to send, Shift+Enter for new line)"
+        required
+      ></textarea>
+
+      <div class="composer-bar">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <label for="modelSelect" style="font-size: 0.8rem; color: var(--muted);">Model:</label>
+          <select id="modelSelect">
+            <option value="DoShibu Fast">DoShibu Fast</option>
+            <option value="DoShibu Reasoning">DoShibu Reasoning</option>
+            <option value="DoShibu Code">DoShibu Code</option>
+          </select>
+        </div>
+
+        <button class="send-btn" type="submit">Send</button>
+      </div>
+    </form>
+  </main>
+
+  <footer>
+    DoShibu UI demo — connect <code>sendToBackend()</code> in <code>index.html</code> to a live LLM endpoint for real responses.
+  </footer>
+
+  <script>
+    const chatForm = document.getElementById("chatForm");
+    const promptInput = document.getElementById("promptInput");
+    const chatFeed = document.getElementById("chatFeed");
+    const modelSelect = document.getElementById("modelSelect");
+    const clearBtn = document.getElementById("clearBtn");
+    const hero = document.getElementById("hero");
+
+    function appendMessage(role, text, modelName = "") {
+      if (hero) hero.style.display = "none";
+
+      const el = document.createElement("div");
+      el.className = `msg ${role}`;
+
+      const meta = document.createElement("span");
+      meta.className = "msg-meta";
+      meta.textContent = role === "user" ? "You" : `DoShibu · ${modelName}`;
+
+      const body = document.createElement("div");
+      body.textContent = text;
+
+      el.appendChild(meta);
+      el.appendChild(body);
+      chatFeed.appendChild(el);
+      el.scrollIntoView({ behavior: "smooth", block: "end" });
+      return body;
+    }
+
+    // Replace this simulated reply with a `fetch('/api/chat', ...)` call to your backend.
+    function generateDemoReply(prompt, model) {
+      return (
+        `[${model}] You asked: "${prompt}"\n\n` +
+        `This is a front-end placeholder response from DoShibu. ` +
+        `To connect real AI replies, replace generateDemoReply() with an API request to your server or LLM provider.`
+      );
+    }
+
+    async function handleSubmit(rawPrompt) {
+      const prompt = rawPrompt.trim();
+      if (!prompt) return;
+
+      const selectedModel = modelSelect.value;
+      appendMessage("user", prompt);
+      promptInput.value = "";
+      promptInput.style.height = "auto";
+
+      const replyNode = appendMessage("assistant", "Thinking...", selectedModel);
+
+      // Brief simulated delay
+      await new Promise((r) => setTimeout(r, 350));
+      replyNode.textContent = generateDemoReply(prompt, selectedModel);
+    }
+
+    chatForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      handleSubmit(promptInput.value);
+    });
+
+    promptInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmit(promptInput.value);
+      }
+    });
+
+    promptInput.addEventListener("input", () => {
+      promptInput.style.height = "auto";
+      promptInput.style.height = `${Math.min(promptInput.scrollHeight, 180)}px`;
+    });
+
+    document.querySelectorAll(".starter-card").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        handleSubmit(btn.dataset.prompt || "");
+      });
+    });
+
+    clearBtn.addEventListener("click", () => {
+      chatFeed.innerHTML = "";
+      if (hero) hero.style.display = "block";
+      promptInput.focus();
+    });
+  </script>
+</body>
+</html>
