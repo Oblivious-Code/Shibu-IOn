@@ -1,0 +1,11 @@
+[build]
+  publish = "public"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+[dev]
+  publish = "public"
+
+[server]
+  path = "/api/*"

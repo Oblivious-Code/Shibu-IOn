@@ -204,8 +204,8 @@ document.getElementById('saveCustomise').addEventListener('click', () => {
 // ---------- AI conversation ----------
 let sending = false;
 
-async function handleSend(inputEl) {
-  const text = inputEl.value.trim();
+async function handleSend(inputEl, retryChat = null) {
+  const text = retryChat ? retryChat.messages.filter(m => m.who === 'user').at(-1)?.text : inputEl.value.trim();
   if (!text || sending) return;
   if (text.length > 12000) {
     inputEl.setCustomValidity('Please keep your message under 12,000 characters.');
@@ -213,15 +213,20 @@ async function handleSend(inputEl) {
     return;
   }
   inputEl.setCustomValidity('');
-  let chat = getCurrentChat();
+  let chat = retryChat || getCurrentChat();
   if (!chat) {
     chat = { id: crypto.randomUUID(), title: text.slice(0, 36), updatedAt: Date.now(), messages: [] };
     chats.push(chat);
     currentChatId = chat.id;
     showChatView();
   }
-  chat.messages.push({ who: 'user', text });
-  renderMessage(text, 'user');
+  if (retryChat) {
+    if (chat.messages.at(-1)?.failed) chat.messages.pop();
+    loadChat(chat.id);
+  } else {
+    chat.messages.push({ who: 'user', text });
+    renderMessage(text, 'user');
+  }
   const history = chat.messages.filter(m => !m.failed && !m.duckUrl && !m.text.startsWith('Sent to Duck.ai') && !m.text.startsWith('Opening Duck.ai'))
     .slice(-20).map(m => ({ role: m.who === 'user' ? 'user' : 'assistant', content: m.text }));
   const reply = { who: 'bot', text: '' };
@@ -248,7 +253,10 @@ async function handleSend(inputEl) {
     });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      throw new Error(data.error || 'Unable to reach the AI. Please try again.');
+      throw new Error(data.error || (response.status === 404 ? 'The chat service is unavailable. Please try again after the site finishes deploying.' : 'Unable to reach the AI. Please try again.'));
+    }
+    if (!response.headers.get('content-type')?.includes('application/x-ndjson')) {
+      throw new Error('The chat service is unavailable. Please try again shortly.');
     }
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -274,12 +282,22 @@ async function handleSend(inputEl) {
       (error.name === 'TimeoutError' ? 'The AI took too long. Please try again.' : error.message || 'Connection lost. Please try again.');
     update();
   } finally {
+    bubble.removeAttribute('role');
     chat.messages.push(reply);
     chat.updatedAt = Date.now();
     saveChats();
     renderRecent();
     sending = false;
     document.querySelectorAll('.send-btn, .chip').forEach(b => b.disabled = false);
+    if (reply.failed && currentChatId === chat.id && bubble.isConnected) {
+      const retry = document.createElement('button');
+      retry.className = 'pill-btn';
+      retry.textContent = 'Retry reply';
+      retry.addEventListener('click', () => {
+        if (!sending && chat.messages.at(-1) === reply) handleSend(document.getElementById('inputChat'), chat);
+      });
+      bubble.appendChild(retry);
+    }
     if (currentChatId === chat.id) document.getElementById('inputChat').focus();
   }
 }
@@ -290,6 +308,7 @@ function setupComposer(inputId, btnId) {
   const btn = document.getElementById(btnId);
 
   input.addEventListener('input', () => {
+    input.setCustomValidity('');
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 180) + 'px';
   });

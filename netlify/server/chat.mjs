@@ -44,6 +44,7 @@ export async function chat(request, clientFactory = () => new OpenAI({ timeout: 
         if (!hasText) throw new Error('Empty reply');
         emit({ done: true });
       } catch (error) {
+        console.error('AI request failed', { name: error.name, status: error.status });
         emit({ error: error.status === 429 ? 'The AI is busy. Please try again in a moment.' : 'The AI could not finish its reply. Please try again.' });
       } finally {
         controller.close();
