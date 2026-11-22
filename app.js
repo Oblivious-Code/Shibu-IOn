@@ -201,60 +201,87 @@ document.getElementById('saveCustomise').addEventListener('click', () => {
   overlay.classList.remove('open');
 });
 
-// ---------- Duck.ai Linker Engine ----------
-function buildDuckAiUrl(userText) {
-  const modifiers = [];
-  if (imageMode) modifiers.push('Generate an image or visual concept for:');
-  if (settings.tone !== 'Balanced') modifiers.push(`Tone: ${settings.tone}.`);
-  if (settings.length !== 'Medium') modifiers.push(`Length: ${settings.length}.`);
-  if (currentMode === 'Fast') modifiers.push('Keep the answer brief and direct.');
-  if (settings.instructions) modifiers.push(settings.instructions);
+// ---------- AI conversation ----------
+let sending = false;
 
-  const finalPrompt = modifiers.length > 0
-    ? `${userText}\n\n(${modifiers.join(' ')})`
-    : userText;
-
-  return `https://duckduckgo.com{encodeURIComponent(finalPrompt)}&ia=chat`;
-}
-
-function handleSend(inputEl) {
+async function handleSend(inputEl) {
   const text = inputEl.value.trim();
-  if (!text) return;
-
-  // Create a chat session if starting fresh
+  if (!text || sending) return;
+  if (text.length > 12000) {
+    inputEl.setCustomValidity('Please keep your message under 12,000 characters.');
+    inputEl.reportValidity();
+    return;
+  }
+  inputEl.setCustomValidity('');
   let chat = getCurrentChat();
   if (!chat) {
-    chat = {
-      id: Date.now().toString(),
-      title: text.slice(0, 36) + (text.length > 36 ? '...' : ''),
-      updatedAt: Date.now(),
-      messages: []
-    };
+    chat = { id: crypto.randomUUID(), title: text.slice(0, 36), updatedAt: Date.now(), messages: [] };
     chats.push(chat);
     currentChatId = chat.id;
     showChatView();
   }
-
-  // Save & render user message
   chat.messages.push({ who: 'user', text });
   renderMessage(text, 'user');
-
-  // Build the Duck.ai URL with your custom settings and open it
-  const duckUrl = buildDuckAiUrl(text);
-  window.open(duckUrl, '_blank', 'noopener,noreferrer');
-
-  // Save & render confirmation bubble with a direct link
-  const botText = `Sent your prompt to Duck.ai (${currentMode} mode, ${settings.tone} tone).`;
-  chat.messages.push({ who: 'bot', text: botText, duckUrl });
-  renderMessage(botText, 'bot', duckUrl);
-
+  const history = chat.messages.filter(m => !m.failed && !m.duckUrl && !m.text.startsWith('Sent to Duck.ai') && !m.text.startsWith('Opening Duck.ai'))
+    .slice(-20).map(m => ({ role: m.who === 'user' ? 'user' : 'assistant', content: m.text }));
+  const reply = { who: 'bot', text: '' };
+  const bubble = renderMessage('Thinking…', 'bot');
+  bubble.setAttribute('role', 'status');
+  sending = true;
+  document.querySelectorAll('.send-btn, .chip').forEach(b => b.disabled = true);
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
   chat.updatedAt = Date.now();
   saveChats();
   renderRecent();
-
-  inputEl.value = '';
-  inputEl.style.height = 'auto';
-  inputEl.focus();
+  const update = () => {
+    if (currentChatId === chat.id && bubble.isConnected) {
+      bubble.textContent = reply.text;
+      stage.scrollTop = stage.scrollHeight;
+    }
+  };
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history, settings, mode: currentMode, imageMode }),
+      signal: AbortSignal.timeout(120000)
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Unable to reach the AI. Please try again.');
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let pending = '', done = false;
+    while (true) {
+      const chunk = await reader.read();
+      pending += decoder.decode(chunk.value, { stream: !chunk.done });
+      const lines = pending.split('\n');
+      pending = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const event = JSON.parse(line);
+        if (event.error) throw new Error(event.error);
+        if (event.text) { reply.text += event.text; update(); }
+        if (event.done) done = true;
+      }
+      if (chunk.done) break;
+    }
+    if (!done || !reply.text) throw new Error('The reply was interrupted. Please try again.');
+  } catch (error) {
+    reply.failed = true;
+    reply.text = (reply.text ? reply.text + '\n\n' : '') +
+      (error.name === 'TimeoutError' ? 'The AI took too long. Please try again.' : error.message || 'Connection lost. Please try again.');
+    update();
+  } finally {
+    chat.messages.push(reply);
+    chat.updatedAt = Date.now();
+    saveChats();
+    renderRecent();
+    sending = false;
+    document.querySelectorAll('.send-btn, .chip').forEach(b => b.disabled = false);
+    if (currentChatId === chat.id) document.getElementById('inputChat').focus();
+  }
 }
 
 // ---------- Wire Up Composers & Suggestion Chips ----------
