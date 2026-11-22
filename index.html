@@ -681,26 +681,44 @@
       overlay.classList.remove('open');
     });
 
-    // ---------- Sending messages ----------
-    function respond(text, chatId, index, bubble) {
-      // Placeholder. Replace with a call to your AI backend.
-      // Send currentMode, settings (tone, length, instructions) and imageMode with the request.
-      setTimeout(() => {
-        let reply;
-        if (imageMode) {
-          reply = `[Image request] Placeholder for an image generated from: "${text}". Connect an image model to show the result.`;
-        } else {
-          reply = `[${currentMode} mode | ${settings.tone}, ${settings.length}] Placeholder reply to: "${text}". Connect a backend to get real answers.`;
-        }
-        bubble.textContent = reply;
+     // ---------- Sending messages (Linked to Duck.ai) ----------
+    function buildDuckAiUrl(text) {
+      const modifiers = [];
+      if (imageMode) modifiers.push('Generate an image or visual concept for:');
+      if (settings.tone !== 'Balanced') modifiers.push(`Tone: ${settings.tone}.`);
+      if (settings.length !== 'Medium') modifiers.push(`Length: ${settings.length}.`);
+      if (currentMode === 'Fast') modifiers.push('Keep the answer brief and direct.');
+      if (settings.instructions) modifiers.push(settings.instructions);
 
-        const chat = chats.find(c => c.id === chatId);
-        if (chat && chat.messages[index]) {
-          chat.messages[index].text = reply;
-          saveChats();
-        }
-        stage.scrollTop = stage.scrollHeight;
-      }, 600);
+      const finalPrompt = modifiers.length > 0
+        ? `${text}\n\n(${modifiers.join(' ')})`
+        : text;
+
+      return `https://duckduckgo.com{encodeURIComponent(finalPrompt)}&ia=chat`;
+    }
+
+    function respond(text, chatId, index, bubble) {
+      const duckUrl = buildDuckAiUrl(text);
+      window.open(duckUrl, '_blank', 'noopener,noreferrer');
+
+      const reply = `Sent to Duck.ai (${currentMode} mode • ${settings.tone}, ${settings.length})`;
+      bubble.textContent = reply + '\n';
+
+      // Clickable fallback button in case the browser blocks the pop-up tab
+      const link = document.createElement('a');
+      link.href = duckUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = 'Open in Duck.ai ↗';
+      link.style.cssText = 'display:inline-block;margin-top:8px;padding:6px 14px;border-radius:999px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:600;';
+      bubble.appendChild(link);
+
+      const chat = chats.find(c => c.id === chatId);
+      if (chat && chat.messages[index]) {
+        chat.messages[index].text = reply;
+        saveChats();
+      }
+      stage.scrollTop = stage.scrollHeight;
     }
 
     function sendMessage(text, inputEl) {
@@ -710,15 +728,16 @@
       chat.messages.push({ who: 'user', text });
       renderMessage(text, 'user');
 
-      chat.messages.push({ who: 'bot', text: 'Thinking...' });
+      chat.messages.push({ who: 'bot', text: 'Opening Duck.ai...' });
       const index = chat.messages.length - 1;
-      const bubble = renderMessage('Thinking...', 'bot');
+      const bubble = renderMessage('Opening Duck.ai...', 'bot');
 
       chat.updatedAt = Date.now();
       saveChats();
       renderRecent();
 
       inputEl.value = '';
+      inputEl.style.height = 'auto';
       respond(text, chat.id, index, bubble);
     }
 
@@ -776,6 +795,6 @@
 
     // ---------- Initial render ----------
     renderRecent();
-  <script src="app.js"></script>
+  </script>
 </body>
 </html>
