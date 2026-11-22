@@ -1,8 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chat } from './chat.mjs';
+import handler, { config } from './index.mjs';
 
 const request = body => new Request('https://example.com/api/chat', { method: 'POST', body: JSON.stringify(body) });
+
+test('routes the public chat endpoint to the server', async () => {
+  assert.equal(config.path, '/api/*');
+  assert.equal((await handler(new Request('https://example.com/api/chat'))).status, 405);
+  assert.equal((await handler(new Request('https://example.com/api/missing'))).status, 404);
+});
 
 test('rejects invalid methods, malformed input, and injected roles', async () => {
   assert.equal((await chat(new Request('https://example.com/api/chat'))).status, 405);
@@ -35,4 +42,16 @@ test('reports provider failures without exposing provider error details', async 
   const text = await response.text();
   assert.match(text, /could not finish/);
   assert.doesNotMatch(text, /private provider details/);
+});
+
+test('reports rate limits and incomplete replies without marking them complete', async () => {
+  for (const status of [429, 500]) {
+    const response = await chat(request({ messages: [{ role: 'user', content: 'Hi' }] }), () => ({
+      chat: { completions: { create: async () => { throw Object.assign(new Error('private'), { status }); } } }
+    }));
+    const events = (await response.text()).trim().split('\n').map(JSON.parse);
+    assert.ok(events.at(-1).error);
+    assert.equal(events.some(event => event.done), false);
+    if (status === 429) assert.match(events.at(-1).error, /busy/);
+  }
 });
